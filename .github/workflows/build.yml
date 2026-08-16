@@ -1,0 +1,70 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install "pyinstaller>=6.10,<7"
+
+      - name: Build standalone EXE
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed `
+            --name BPSR-CustomPFP-Lite `
+            --collect-all UnityPy `
+            --collect-all PIL `
+            src/app.py
+
+      - name: Package ZIP
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Copy-Item dist/BPSR-CustomPFP-Lite.exe release/
+          Copy-Item README.md release/
+          Copy-Item THIRD_PARTY_NOTICES.md release/
+          Compress-Archive -Path release/* -DestinationPath BPSR-CustomPFP-Lite-Windows.zip -Force
+
+      - name: Upload Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BPSR-CustomPFP-Lite-Windows
+          path: BPSR-CustomPFP-Lite-Windows.zip
+
+      - name: Publish/update Latest release
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f latest $env:GITHUB_SHA
+          git push -f origin refs/tags/latest
+          gh release view latest *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload latest BPSR-CustomPFP-Lite-Windows.zip --clobber
+          } else {
+            gh release create latest BPSR-CustomPFP-Lite-Windows.zip --title "Latest Windows build" --notes "Standalone Windows build. No Python installation is required." --latest
+          }
