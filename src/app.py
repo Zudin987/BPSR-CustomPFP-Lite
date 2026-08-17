@@ -12,6 +12,7 @@ import struct
 import threading
 import time
 import sys
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
@@ -19,7 +20,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 APP_NAME = "BPSR Custom PFP Lite"
-VERSION = "0.3.1"
+VERSION = "0.3.2"
 TARGET_PREFIX = "personalzone_player_bg_"
 TARGET_NAMES = tuple(f"{TARGET_PREFIX}{i}" for i in range(1, 21))
 TARGET_SET = set(TARGET_NAMES)
@@ -35,6 +36,50 @@ CARD_RATIO = (468, 774)
 PORTRAIT_OUTPUT = (1024, 1024)
 CARD_OUTPUT = (468, 774)
 CARD_SIZES = [(545, 2152), (545, 3130), (545, 4000), (545, 5000), (545, 6191)]
+
+
+def bundled_path(relative: str) -> Path:
+    """Return a bundled resource path in both source and PyInstaller builds."""
+    frozen_root = getattr(sys, "_MEIPASS", None)
+    if frozen_root:
+        return Path(frozen_root) / relative
+    return Path(__file__).resolve().parent.parent / relative
+
+
+def ensure_admin_or_relaunch() -> bool:
+    """Ask Windows for administrator permission once, then relaunch elevated."""
+    if os.name != "nt":
+        return True
+    try:
+        if ctypes.windll.shell32.IsUserAnAdmin():
+            return True
+    except Exception:
+        return True
+
+    if getattr(sys, "frozen", False):
+        executable = sys.executable
+        args = sys.argv[1:]
+    else:
+        executable = sys.executable
+        args = [str(Path(__file__).resolve()), *sys.argv[1:]]
+
+    params = subprocess.list2cmdline(args)
+    try:
+        result = ctypes.windll.shell32.ShellExecuteW(None, "runas", executable, params, None, 1)
+    except Exception:
+        result = 0
+
+    if result <= 32:
+        try:
+            ctypes.windll.user32.MessageBoxW(
+                None,
+                "Administrator permission is needed so the app can resize the BPSR window and update the selected game file.",
+                APP_NAME,
+                0x10,
+            )
+        except Exception:
+            pass
+    return False
 
 
 @dataclass(frozen=True)
@@ -718,6 +763,12 @@ class App(tk.Tk):
         self.tools_visible = False
 
         self.title(f"{APP_NAME} v{VERSION}")
+        self._window_icon = None
+        try:
+            self._window_icon = tk.PhotoImage(file=str(bundled_path("assets/app_icon.png")))
+            self.iconphoto(True, self._window_icon)
+        except Exception:
+            pass
         self.geometry("790x850")
         self.minsize(720, 700)
         self.build_ui()
@@ -1177,13 +1228,25 @@ class App(tk.Tk):
 
 
 def frozen_self_test() -> int:
-    """Verify native dependencies that the frozen EXE needs before a release is published."""
+    """Verify packaged resources before GitHub publishes a Windows release."""
     try:
         import UnityPy  # noqa: F401
         import fmod_toolkit
+        import archspec
 
         dll = Path(fmod_toolkit.__file__).resolve().parent / "libfmod" / "Windows" / "x64" / "fmod.dll"
-        return 0 if dll.is_file() else 2
+        if not dll.is_file():
+            return 2
+
+        cpu_db = Path(archspec.__file__).resolve().parent / "cpu" / "microarchitectures.json"
+        if not cpu_db.is_file():
+            return 4
+        # Actually read the database so a broken one-file bundle fails in CI, not on the user's PC.
+        json.loads(cpu_db.read_text(encoding="utf-8"))
+
+        if not bundled_path("assets/app_icon.png").is_file():
+            return 5
+        return 0
     except Exception:
         return 3
 
@@ -1191,5 +1254,7 @@ def frozen_self_test() -> int:
 if __name__ == "__main__":
     if "--self-test" in sys.argv:
         raise SystemExit(frozen_self_test())
+    if not ensure_admin_or_relaunch():
+        raise SystemExit(0)
     ensure_dirs()
     App().mainloop()
