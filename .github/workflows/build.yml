@@ -35,8 +35,9 @@ jobs:
       - name: Resolve application version
         shell: pwsh
         run: |
-          $version = python -c "import pathlib,re; s=pathlib.Path('src/app.py').read_text(encoding='utf-8'); print(re.search(r'^VERSION = \"([^\"]+)\"', s, re.M).group(1))"
-          if (-not $version) { throw "Could not read VERSION from src/app.py" }
+          $match = Select-String -Path "src/app.py" -Pattern '^VERSION = "([^"]+)"$'
+          if (-not $match) { throw "Could not read VERSION from src/app.py" }
+          $version = $match.Matches[0].Groups[1].Value
           $exeName = "BPSR-CustomPFP-Lite-v$version"
           "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "EXE_NAME=$exeName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
