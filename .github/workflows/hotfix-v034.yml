@@ -1,0 +1,33 @@
+name: Apply v0.3.4 scrollable UI patch
+
+on:
+  push:
+    paths:
+      - 'tools/hotfix_v034.py'
+      - '.github/workflows/hotfix-v034.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply v0.3.4 source patch
+        shell: pwsh
+        run: python tools/hotfix_v034.py
+      - name: Validate Python syntax
+        shell: pwsh
+        run: python -m py_compile src/app.py
+      - name: Commit patched app
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app.py README.md .github/workflows/build.yml
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) {
+            git commit -m "Release v0.3.4 scrollable guided UI"
+            git push
+          }
