@@ -20,7 +20,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 APP_NAME = "BPSR Custom PFP Lite"
-VERSION = "0.3.2"
+VERSION = "0.3.3"
 TARGET_PREFIX = "personalzone_player_bg_"
 TARGET_NAMES = tuple(f"{TARGET_PREFIX}{i}" for i in range(1, 21))
 TARGET_SET = set(TARGET_NAMES)
@@ -754,6 +754,8 @@ class App(tk.Tk):
         self.hint_var = tk.StringVar(value=self.cfg.get("hint", ""))
         self.image_var = tk.StringVar(value=self.cfg.get("image", ""))
         self.mode_var = tk.StringVar(value=self.cfg.get("mode", "portrait"))
+        self.booth_ready_var = tk.BooleanVar(value=False)
+        self.capture_help_var = tk.StringVar(value="After Apply succeeds, the exact in-game capture steps will appear here.")
         self.game_status = tk.StringVar(value="Checking for your game...")
         self.picture_status = tk.StringVar(value="No picture selected yet")
         self.main_status = tk.StringVar(value="Choose a picture to continue.")
@@ -769,8 +771,8 @@ class App(tk.Tk):
             self.iconphoto(True, self._window_icon)
         except Exception:
             pass
-        self.geometry("790x850")
-        self.minsize(720, 700)
+        self.geometry("820x960")
+        self.minsize(760, 760)
         self.build_ui()
         self.after(100, self.drain_events)
         self.after(250, self.initial_setup)
@@ -781,13 +783,13 @@ class App(tk.Tk):
         root.columnconfigure(0, weight=1)
 
         ttk.Label(root, text="Change Your BPSR Picture", font=("Segoe UI", 20, "bold")).grid(row=0, column=0, sticky="w")
-        ttk.Label(root, text="Pick a picture, adjust it, and let the app do the rest.").grid(row=1, column=0, sticky="w", pady=(2, 14))
+        ttk.Label(root, text="Follow the steps in order. The app handles the game-file work and keeps a clean backup for you.").grid(row=1, column=0, sticky="w", pady=(2, 14))
 
         game = ttk.LabelFrame(root, text="1. Find Your Game")
         game.grid(row=2, column=0, sticky="ew", pady=(0, 10))
         game.columnconfigure(0, weight=1)
         ttk.Label(game, textvariable=self.game_status, font=("Segoe UI", 11, "bold")).grid(row=0, column=0, sticky="w", padx=12, pady=(10, 2))
-        ttk.Label(game, text="We’ll find BPSR automatically. If needed, you can choose another install folder yourself.").grid(row=1, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 8))
+        ttk.Label(game, text="We’ll find BPSR automatically. If needed, choose another install folder yourself.", wraplength=730).grid(row=1, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 8))
         buttons = ttk.Frame(game)
         buttons.grid(row=2, column=0, sticky="w", padx=8, pady=(0, 10))
         ttk.Button(buttons, text="Find Game Automatically", command=self.auto_find_game).pack(side="left", padx=4)
@@ -803,7 +805,7 @@ class App(tk.Tk):
         modes.grid(row=1, column=1, sticky="w")
         ttk.Radiobutton(modes, text="Square", variable=self.mode_var, value="portrait", command=self.mode_changed).pack(side="left")
         ttk.Radiobutton(modes, text="Card", variable=self.mode_var, value="card", command=self.mode_changed).pack(side="left", padx=(12, 0))
-        ttk.Label(picture, text="Square is best for profile pictures. Card is the tall layout.").grid(row=2, column=1, sticky="w", pady=(4, 8))
+        ttk.Label(picture, text="Square is for the profile picture. Card is the tall namecard layout.").grid(row=2, column=1, sticky="w", pady=(4, 8))
         row = ttk.Frame(picture)
         row.grid(row=3, column=1, sticky="w", pady=(0, 12))
         ttk.Button(row, text="Choose Picture", command=self.choose_picture).pack(side="left")
@@ -811,24 +813,36 @@ class App(tk.Tk):
         self.crop_button.pack(side="left", padx=(6, 0))
         ttk.Label(picture, textvariable=self.picture_status).grid(row=4, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 10))
 
-        apply_box = ttk.LabelFrame(root, text="3. Apply It")
-        apply_box.grid(row=4, column=0, sticky="ew", pady=(0, 10))
+        prepare = ttk.LabelFrame(root, text="3. Get BPSR Ready Before Applying")
+        prepare.grid(row=4, column=0, sticky="ew", pady=(0, 10))
+        ttk.Label(prepare, text="• Open BPSR and keep it running.\n• Go to Guild Center → Guild Photo Booth and stay at the booth.\n• If you will use the resize buttons, switch BPSR to Windowed mode first.", justify="left", wraplength=730).pack(anchor="w", padx=12, pady=(10, 6))
+        ttk.Label(prepare, text="Do this before Apply. It avoids changing the picture file while the game is moving between other areas or screens.", font=("Segoe UI", 9, "bold"), wraplength=730).pack(anchor="w", padx=12, pady=(0, 6))
+        ttk.Checkbutton(prepare, text="BPSR is open and I am at the Guild Photo Booth", variable=self.booth_ready_var, command=self.prep_changed).pack(anchor="w", padx=12, pady=(0, 10))
+
+        apply_box = ttk.LabelFrame(root, text="4. Apply the Picture")
+        apply_box.grid(row=5, column=0, sticky="ew", pady=(0, 10))
         apply_box.columnconfigure(0, weight=1)
-        ttk.Label(apply_box, text="The app will find a usable picture slot, save your original file, and apply the picture automatically.").grid(row=0, column=0, columnspan=2, sticky="w", padx=12, pady=(10, 8))
-        self.apply_button = ttk.Button(apply_box, text="Use This Picture", command=self.apply_clicked)
-        self.apply_button.grid(row=1, column=0, sticky="ew", padx=(12, 6), pady=(0, 8))
-        ttk.Button(apply_box, text="Restore Original", command=self.restore_clicked).grid(row=1, column=1, padx=(6, 12), pady=(0, 8))
-        ttk.Progressbar(apply_box, variable=self.progress_var, maximum=100).grid(row=2, column=0, columnspan=2, sticky="ew", padx=12, pady=(0, 6))
-        ttk.Label(apply_box, textvariable=self.main_status, font=("Segoe UI", 10, "bold")).grid(row=3, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 10))
+        ttk.Label(apply_box, text="The app automatically saves a clean original backup first, finds the picture slot, verifies the rebuilt file, and only then changes the live game file.", wraplength=730).grid(row=0, column=0, sticky="w", padx=12, pady=(10, 8))
+        self.apply_button = ttk.Button(apply_box, text="Apply Picture to BPSR", command=self.apply_clicked)
+        self.apply_button.grid(row=1, column=0, sticky="ew", padx=12, pady=(0, 8))
+        ttk.Progressbar(apply_box, variable=self.progress_var, maximum=100).grid(row=2, column=0, sticky="ew", padx=12, pady=(0, 6))
+        ttk.Label(apply_box, textvariable=self.main_status, font=("Segoe UI", 10, "bold"), wraplength=730).grid(row=3, column=0, sticky="w", padx=12, pady=(0, 10))
+
+        finish = ttk.LabelFrame(root, text="5. Capture It In-Game, Then Finish")
+        finish.grid(row=6, column=0, sticky="ew", pady=(0, 10))
+        ttk.Label(finish, textvariable=self.capture_help_var, justify="left", wraplength=730).pack(anchor="w", padx=12, pady=(10, 8))
+        ttk.Label(finish, text="Tip: If the custom picture does not appear, go to Homestead, then return to Guild and reopen the photo booth to refresh it.", wraplength=730).pack(anchor="w", padx=12, pady=(0, 8))
+        self.finish_restore_button = ttk.Button(finish, text="Finish — Restore Original Game File", command=self.restore_clicked)
+        self.finish_restore_button.pack(fill="x", padx=12, pady=(0, 10))
 
         toggles = ttk.Frame(root)
-        toggles.grid(row=5, column=0, sticky="ew", pady=(0, 6))
+        toggles.grid(row=7, column=0, sticky="ew", pady=(0, 6))
         ttk.Button(toggles, text="Helpful Tools ▸", command=self.toggle_tools).pack(side="left")
         ttk.Button(toggles, text="Advanced Options ▸", command=self.toggle_advanced).pack(side="left", padx=(8, 0))
 
         self.tools_frame = ttk.LabelFrame(root, text="Helpful Tools")
-        self.tools_frame.grid(row=6, column=0, sticky="ew", pady=(0, 8))
-        ttk.Label(self.tools_frame, text="These resize the BPSR window for the in-game photo booth. Open BPSR in Windowed mode first.").pack(anchor="w", padx=12, pady=(10, 8))
+        self.tools_frame.grid(row=8, column=0, sticky="ew", pady=(0, 8))
+        ttk.Label(self.tools_frame, text="Use these only after Apply succeeds. BPSR must be open in Windowed mode.").pack(anchor="w", padx=12, pady=(10, 8))
         tool_buttons = ttk.Frame(self.tools_frame)
         tool_buttons.pack(fill="x", padx=8, pady=(0, 10))
         ttk.Button(tool_buttons, text="Set Window for Square Photo", command=lambda: self.resize_game(545, 2152)).pack(side="left", padx=4)
@@ -838,11 +852,11 @@ class App(tk.Tk):
             command=self.next_card_size,
         )
         self.card_button.pack(side="left", padx=4)
-        ttk.Button(tool_buttons, text="Restore Window Size", command=lambda: self.resize_game(1920, 1080)).pack(side="left", padx=4)
+        ttk.Button(tool_buttons, text="Restore Window Size", command=self.restore_window_size).pack(side="left", padx=4)
         self.tools_frame.grid_remove()
 
         self.advanced_frame = ttk.LabelFrame(root, text="Advanced Options")
-        self.advanced_frame.grid(row=7, column=0, sticky="nsew")
+        self.advanced_frame.grid(row=9, column=0, sticky="nsew")
         self.advanced_frame.columnconfigure(1, weight=1)
         ttk.Label(self.advanced_frame, text="You usually don’t need anything here.").grid(row=0, column=0, columnspan=3, sticky="w", padx=12, pady=(10, 8))
         ttk.Label(self.advanced_frame, text="Game folder").grid(row=1, column=0, sticky="w", padx=12, pady=4)
@@ -867,8 +881,8 @@ class App(tk.Tk):
         self.log_text.pack(fill="both", expand=True, padx=5, pady=5)
         self.advanced_frame.grid_remove()
 
-        root.rowconfigure(7, weight=1)
-        ttk.Label(root, text="Unofficial client-file modification. The app keeps backups, but use it at your own risk.").grid(row=8, column=0, sticky="w", pady=(8, 0))
+        root.rowconfigure(9, weight=1)
+        ttk.Label(root, text="Unofficial client-file modification. The app keeps backups, but use it at your own risk.").grid(row=10, column=0, sticky="w", pady=(8, 0))
 
     def emit_log(self, text: str) -> None:
         self.events.put(("log", text))
@@ -903,9 +917,15 @@ class App(tk.Tk):
                 elif kind == "done":
                     self.worker = None
                     self.progress_var.set(100)
-                    self.main_status.set("Done! Your picture was applied successfully.")
+                    self.main_status.set("Applied. Capture and save it in BPSR now, then restore the original game file in Step 5.")
+                    self.show_capture_instructions(self.mode_var.get())
                     self.update_ready_state()
-                    messagebox.showinfo(APP_NAME, "Done!\n\nYour picture was applied successfully. You can now use the BPSR photo booth to capture/save it.")
+                    messagebox.showinfo(
+                        APP_NAME,
+                        "Picture applied successfully.\n\n"
+                        "Next: stay at the Guild Photo Booth, follow Step 5 in this app, and save the photo in-game. "
+                        "After it is saved, restore the window size and click Finish — Restore Original Game File."
+                    )
                 elif kind == "search_done":
                     self.worker = None
                     self.progress_var.set(100)
@@ -1019,10 +1039,33 @@ class App(tk.Tk):
                 self.main_status.set("Adjust the crop to match the selected picture shape.")
             else:
                 self.main_status.set("Choose a picture to continue.")
+        elif not self.booth_ready_var.get():
+            self.apply_button.state(["disabled"])
+            self.main_status.set("Before applying, go to the Guild Photo Booth and confirm Step 3.")
         else:
             self.apply_button.state(["!disabled"])
-            if not self.main_status.get().startswith("Done"):
+            if not self.main_status.get().startswith(("Applied", "Finished")):
                 self.main_status.set("Ready to apply.")
+
+    def prep_changed(self) -> None:
+        self.update_ready_state()
+
+    def show_capture_instructions(self, mode: Optional[str] = None) -> None:
+        mode = mode or self.mode_var.get()
+        if mode == "card":
+            self.capture_help_var.set(
+                "Card photo: 1) Open Helpful Tools and press Card Photo Step 1/5. "
+                "In the Guild Photo Booth, open Card Photo and hide your character. "
+                "2) Keep moving the BPSR window to the top of the screen and press the Card Photo button for Steps 2/5 through 5/5. "
+                "At the final size, press V and save the photo. 3) Click Restore Window Size. "
+                "4) When the photo is safely saved, click Finish — Restore Original Game File below."
+            )
+        else:
+            self.capture_help_var.set(
+                "Square photo: 1) Open Helpful Tools and click Set Window for Square Photo. "
+                "2) In the Guild Photo Booth, hide your character with the suitable pose/emote, move the BPSR window to the top of the screen, press V, and save the photo. "
+                "3) Click Restore Window Size. 4) When the photo is safely saved, click Finish — Restore Original Game File below."
+            )
 
     def mode_changed(self) -> None:
         self.cfg["mode"] = self.mode_var.get()
@@ -1030,6 +1073,8 @@ class App(tk.Tk):
         # Existing crop may have the old ratio; require a fresh crop before applying.
         if self.image_var.get() and Path(self.image_var.get()).is_file():
             self.picture_status.set("Picture shape changed — adjust the crop again before applying.")
+        self.reset_card_steps()
+        self.capture_help_var.set("After Apply succeeds, the exact in-game capture steps will appear here.")
         self.update_ready_state()
 
     def crop_settings(self):
@@ -1138,6 +1183,11 @@ class App(tk.Tk):
             self.worker = None
             self.update_ready_state()
             return
+        if not self.booth_ready_var.get():
+            self.worker = None
+            self.update_ready_state()
+            messagebox.showwarning(APP_NAME, "Go to the Guild Photo Booth first, then confirm Step 3 before applying.")
+            return
         try:
             file_hint = parse_file_hint(self.hint_var.get())
         except Exception as exc:
@@ -1188,8 +1238,12 @@ class App(tk.Tk):
         if not messagebox.askyesno(APP_NAME, "Restore the original game file saved before your custom picture was applied?"):
             return
         if restore_original(pkg):
-            self.main_status.set("Your original file has been restored.")
-            messagebox.showinfo(APP_NAME, "Original restored successfully.")
+            self.main_status.set("Finished. Your original game file has been restored.")
+            self.capture_help_var.set("Finished. The clean original game file is back in place. To do another picture, start again from Step 2 and reconfirm Step 3.")
+            self.booth_ready_var.set(False)
+            self.apply_button.state(["disabled"])
+            self.reset_card_steps()
+            messagebox.showinfo(APP_NAME, "Original game file restored successfully.\n\nThe clean backup remains available for future restore/recovery.")
         else:
             messagebox.showinfo(APP_NAME, "No clean backup exists for this game file yet.")
 
@@ -1206,6 +1260,19 @@ class App(tk.Tk):
             self.advanced_frame.grid()
         else:
             self.advanced_frame.grid_remove()
+
+    def reset_card_steps(self) -> None:
+        self.card_step = 0
+        if hasattr(self, "card_button"):
+            self.card_button.configure(text=f"Card Photo Step 1/{len(CARD_SIZES)}")
+
+    def restore_window_size(self) -> None:
+        try:
+            resize_bpsr(1920, 1080)
+            self.reset_card_steps()
+            self.emit_log("BPSR window restored to 1920×1080. Card photo steps reset to Step 1.")
+        except Exception as exc:
+            messagebox.showerror(APP_NAME, str(exc))
 
     def resize_game(self, width: int, height: int) -> None:
         try:
