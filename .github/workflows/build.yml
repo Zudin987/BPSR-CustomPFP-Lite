@@ -41,7 +41,7 @@ jobs:
         shell: pwsh
         run: |
           pyinstaller --noconfirm --clean --onefile --windowed `
-            --name BPSR-CustomPFP-Lite-v0.3.4 `
+            --name BPSR-CustomPFP-Lite-v0.3.5 `
             --icon assets/app_icon.ico `
             --add-data "assets/app_icon.png;assets" `
             --collect-all UnityPy `
@@ -53,7 +53,7 @@ jobs:
       - name: Verify frozen dependencies
         shell: pwsh
         run: |
-          $process = Start-Process -FilePath ".\dist\BPSR-CustomPFP-Lite-v0.3.4.exe" -ArgumentList "--self-test" -Wait -PassThru
+          $process = Start-Process -FilePath ".\dist\BPSR-CustomPFP-Lite-v0.3.5.exe" -ArgumentList "--self-test" -Wait -PassThru
           if ($process.ExitCode -ne 0) {
             throw "Frozen dependency self-test failed with exit code $($process.ExitCode)."
           }
@@ -62,7 +62,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path release | Out-Null
-          Copy-Item dist/BPSR-CustomPFP-Lite-v0.3.4.exe release/
+          Copy-Item dist/BPSR-CustomPFP-Lite-v0.3.5.exe release/
           Copy-Item README.md release/
           Copy-Item THIRD_PARTY_NOTICES.md release/
           Compress-Archive -Path release/* -DestinationPath BPSR-CustomPFP-Lite-Windows.zip -Force
