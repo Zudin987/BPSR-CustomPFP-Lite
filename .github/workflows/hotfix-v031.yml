@@ -1,0 +1,29 @@
+name: Apply v0.3.1 runtime hotfix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - tools/hotfix_v031.py
+      - .github/workflows/hotfix-v031.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply source hotfix
+        run: python tools/hotfix_v031.py
+      - name: Validate Python syntax
+        run: python -m py_compile src/app.py
+      - name: Commit hotfix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app.py
+          git diff --cached --quiet && exit 0
+          git commit -m "v0.3.1: fix frozen DLL and clarify card setup"
+          git push
