@@ -19,11 +19,6 @@ s = s.replace(old_capture, new_capture, 1)
 
 app_path.write_text(s, encoding='utf-8')
 
-workflow = Path('.github/workflows/build.yml')
-w = workflow.read_text(encoding='utf-8')
-w = w.replace('BPSR-CustomPFP-Lite-v0.3.3', 'BPSR-CustomPFP-Lite-v0.3.4')
-workflow.write_text(w, encoding='utf-8')
-
 readme = Path('README.md')
 r = readme.read_text(encoding='utf-8')
 insert = '''\n## v0.3.4 — scrollable guided UI\n\n- The main window is vertically scrollable, including mouse-wheel scrolling, so Helpful Tools and Advanced Options remain reachable on smaller displays.\n- Step 5 capture instructions are now one numbered action per line instead of a dense paragraph.\n- All v0.3.3 backup, restore, Guild Photo Booth preparation, Homestead refresh tip, and card-step reset behavior are kept.\n\n'''
