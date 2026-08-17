@@ -254,6 +254,7 @@ def find_in_one_package(
     file_hint: Optional[int] = None,
     cached_file: Optional[int] = None,
     cached_slot: Optional[str] = None,
+    only_preferred: bool = False,
 ) -> Optional[Target]:
     ss = segments(pkg)
     if not ss:
@@ -270,8 +271,11 @@ def find_in_one_package(
         seg = ss[number - 1]
         blob = read_segment(pkg, seg)
         slot = target_name_from_blob(blob)
-        if slot and (not cached_slot or number != cached_file or slot == cached_slot or slot in TARGET_SET):
+        if slot:
             return Target(pkg, seg, slot)
+
+    if only_preferred:
+        return None
 
     # Cheap pass: if names happen to be visible in uncompressed bundle data, test these first.
     raw_candidates: list[tuple[Segment, bytes]] = []
@@ -342,12 +346,31 @@ def find_target(
             seen.add(pkg.name)
 
     total = len(ordered)
+
+    # If Discord gave fileNNN, test exactly that bundle across packages first.
+    # This avoids full-decompressing the wrong package just because it was checked first.
+    if file_hint:
+        log(f"Trying the optional file{file_hint} speed hint...")
+        for index, pkg in enumerate(ordered, 1):
+            progress(index - 1, total)
+            target = find_in_one_package(pkg, file_hint=file_hint, only_preferred=True)
+            if target:
+                cfg["detected_package"] = pkg.name
+                cfg["detected_file"] = target.segment.number
+                cfg["detected_slot"] = target.slot_name
+                cfg["package"] = pkg.name
+                save_cfg(cfg)
+                progress(total, total)
+                log("Picture slot found.")
+                return target
+        log("That speed hint is outdated, so we’re searching normally...")
+
     log("Looking for a usable picture slot...")
     for index, pkg in enumerate(ordered, 1):
         progress(index - 1, total)
         if index == 1 or index % 5 == 0:
             log(f"Searching game files... {index}/{total}")
-        target = find_in_one_package(pkg, file_hint)
+        target = find_in_one_package(pkg)
         if target:
             cfg["detected_package"] = pkg.name
             cfg["detected_file"] = target.segment.number
@@ -893,6 +916,8 @@ class App(tk.Tk):
         self.cfg.pop("detected_package", None)
         self.cfg.pop("detected_file", None)
         self.cfg.pop("detected_slot", None)
+        self.cfg.pop("package", None)
+        self.package_var.set("")
         save_cfg(self.cfg)
         self.target_status.set("Not searched yet")
 
@@ -933,7 +958,10 @@ class App(tk.Tk):
             self.main_status.set("Choose your BPSR game folder to continue.")
         elif not self.valid_image():
             self.apply_button.state(["disabled"])
-            self.main_status.set("Choose a picture to continue.")
+            if self.image_var.get() and Path(self.image_var.get()).is_file():
+                self.main_status.set("Adjust the crop to match the selected picture shape.")
+            else:
+                self.main_status.set("Choose a picture to continue.")
         else:
             self.apply_button.state(["!disabled"])
             if not self.main_status.get().startswith("Done"):
@@ -943,7 +971,7 @@ class App(tk.Tk):
         self.cfg["mode"] = self.mode_var.get()
         save_cfg(self.cfg)
         # Existing crop may have the old ratio; require a fresh crop before applying.
-        if self.valid_image():
+        if self.image_var.get() and Path(self.image_var.get()).is_file():
             self.picture_status.set("Picture shape changed — adjust the crop again before applying.")
         self.update_ready_state()
 
