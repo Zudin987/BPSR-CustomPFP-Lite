@@ -11,7 +11,6 @@ permissions:
 
 jobs:
   finalize:
-    if: ${{ hashFiles('tools/finalize_v030.py') != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
