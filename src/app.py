@@ -1232,17 +1232,17 @@ def frozen_self_test() -> int:
     try:
         import UnityPy  # noqa: F401
         import fmod_toolkit
-        import archspec
+        import archspec.cpu
 
         dll = Path(fmod_toolkit.__file__).resolve().parent / "libfmod" / "Windows" / "x64" / "fmod.dll"
         if not dll.is_file():
             return 2
 
-        cpu_db = Path(archspec.__file__).resolve().parent / "cpu" / "microarchitectures.json"
-        if not cpu_db.is_file():
+        # Exercise Archspec's real lazy JSON loader. This catches the exact missing
+        # microarchitectures.json class of frozen-build failure without hard-coding
+        # Archspec's internal data directory layout.
+        if len(archspec.cpu.TARGETS) == 0:
             return 4
-        # Actually read the database so a broken one-file bundle fails in CI, not on the user's PC.
-        json.loads(cpu_db.read_text(encoding="utf-8"))
 
         if not bundled_path("assets/app_icon.png").is_file():
             return 5
