@@ -34,8 +34,17 @@ jobs:
           pyinstaller --noconfirm --clean --onefile --windowed `
             --name BPSR-CustomPFP-Lite `
             --collect-all UnityPy `
+            --collect-all fmod_toolkit `
             --collect-all PIL `
             src/app.py
+
+      - name: Verify frozen dependencies
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath ".\dist\BPSR-CustomPFP-Lite.exe" -ArgumentList "--self-test" -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "Frozen dependency self-test failed with exit code $($process.ExitCode)."
+          }
 
       - name: Package ZIP
         shell: pwsh
