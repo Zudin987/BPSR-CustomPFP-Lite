@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: bpsr-windows-release
+  group: bpsr-stable-release
   cancel-in-progress: true
 
 jobs:
