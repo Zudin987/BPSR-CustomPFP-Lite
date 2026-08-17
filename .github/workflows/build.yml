@@ -3,6 +3,12 @@ name: Build Windows Release
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'assets/**'
+      - 'requirements.txt'
+      - 'THIRD_PARTY_NOTICES.md'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 
 permissions:
@@ -104,7 +110,8 @@ jobs:
           if ($existing) {
             $remoteSha = ($existing -split "\s+")[0]
             if ($remoteSha -ne $env:GITHUB_SHA) {
-              throw "Release tag $tag already exists on a different commit. Bump VERSION before publishing another stable release."
+              Write-Host "Version $tag is already released from another commit. Build validation passed, but publishing is skipped. Bump VERSION to publish a new release."
+              exit 0
             }
           } else {
             git tag $tag $env:GITHUB_SHA
@@ -112,7 +119,7 @@ jobs:
           }
 
           $notes = @"
-          BPSR Custom PFP Lite $tag — first stable release.
+          BPSR Custom PFP Lite $tag — stable Windows release.
 
           Release assets:
           - $env:EXE_NAME.exe — standalone Windows application.
