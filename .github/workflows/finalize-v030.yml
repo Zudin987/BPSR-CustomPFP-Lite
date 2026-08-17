@@ -5,6 +5,7 @@ on:
     branches: [feature/v0.3.0-radical-simplification]
     paths:
       - tools/finalize_v030.py
+      - .github/workflows/finalize-v030.yml
 
 permissions:
   contents: write
