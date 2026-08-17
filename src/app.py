@@ -20,7 +20,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 APP_NAME = "BPSR Custom PFP Lite"
-VERSION = "0.3.5"
+VERSION = "1.0.0"
 TARGET_PREFIX = "personalzone_player_bg_"
 TARGET_NAMES = tuple(f"{TARGET_PREFIX}{i}" for i in range(1, 21))
 TARGET_SET = set(TARGET_NAMES)
