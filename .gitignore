@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# PyInstaller / local builds
+build/
+dist/
+release/
+*.spec
+
+# Generated icon / release files
+assets/app_icon.ico
+*.exe
+*.msi
+*.zip
+*.7z
+*.rar
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local app/test data
+*.log
