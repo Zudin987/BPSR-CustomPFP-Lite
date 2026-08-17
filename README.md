@@ -2,6 +2,12 @@
 
 A beginner-friendly Windows utility that simplifies the community custom portrait / card-photo method for **Blue Protocol: Star Resonance**.
 
+## v0.3.4 — scrollable guided UI
+
+- The main window is vertically scrollable, including mouse-wheel scrolling, so Helpful Tools and Advanced Options remain reachable on smaller displays.
+- Step 5 capture instructions are now one numbered action per line instead of a dense paragraph.
+- All v0.3.3 backup, restore, Guild Photo Booth preparation, Homestead refresh tip, and card-step reset behavior are kept.
+
 ## v0.3.3 — guided from start to finish
 
 The normal workflow is now shown directly in the app:

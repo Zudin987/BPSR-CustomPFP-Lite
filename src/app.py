@@ -20,7 +20,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 APP_NAME = "BPSR Custom PFP Lite"
-VERSION = "0.3.3"
+VERSION = "0.3.4"
 TARGET_PREFIX = "personalzone_player_bg_"
 TARGET_NAMES = tuple(f"{TARGET_PREFIX}{i}" for i in range(1, 21))
 TARGET_SET = set(TARGET_NAMES)
@@ -778,9 +778,37 @@ class App(tk.Tk):
         self.after(250, self.initial_setup)
 
     def build_ui(self) -> None:
-        root = ttk.Frame(self)
-        root.pack(fill="both", expand=True, padx=16, pady=14)
+        shell = ttk.Frame(self)
+        shell.pack(fill="both", expand=True)
+
+        canvas = tk.Canvas(shell, highlightthickness=0, borderwidth=0, background=self.cget("background"))
+        scrollbar = ttk.Scrollbar(shell, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        root = ttk.Frame(canvas, padding=(16, 14, 16, 14))
+        window_id = canvas.create_window((0, 0), window=root, anchor="nw")
         root.columnconfigure(0, weight=1)
+
+        def sync_scroll_region(_event=None) -> None:
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        def fit_content_width(event) -> None:
+            canvas.itemconfigure(window_id, width=event.width)
+
+        def mousewheel(event) -> None:
+            try:
+                if event.widget.winfo_toplevel() != self:
+                    return
+            except Exception:
+                return
+            if event.delta:
+                canvas.yview_scroll(-1 if event.delta > 0 else 1, "units")
+
+        root.bind("<Configure>", sync_scroll_region)
+        canvas.bind("<Configure>", fit_content_width)
+        self.bind_all("<MouseWheel>", mousewheel, add="+")
 
         ttk.Label(root, text="Change Your BPSR Picture", font=("Segoe UI", 20, "bold")).grid(row=0, column=0, sticky="w")
         ttk.Label(root, text="Follow the steps in order. The app handles the game-file work and keeps a clean backup for you.").grid(row=1, column=0, sticky="w", pady=(2, 14))
@@ -1054,17 +1082,22 @@ class App(tk.Tk):
         mode = mode or self.mode_var.get()
         if mode == "card":
             self.capture_help_var.set(
-                "Card photo: 1) Open Helpful Tools and press Card Photo Step 1/5. "
-                "In the Guild Photo Booth, open Card Photo and hide your character. "
-                "2) Keep moving the BPSR window to the top of the screen and press the Card Photo button for Steps 2/5 through 5/5. "
-                "At the final size, press V and save the photo. 3) Click Restore Window Size. "
-                "4) When the photo is safely saved, click Finish — Restore Original Game File below."
+                "Card photo:\n"
+                "1) Open Helpful Tools and press Card Photo Step 1/5.\n"
+                "2) In the Guild Photo Booth, open Card Photo and hide your character.\n"
+                "3) Keep the BPSR window at the top of the screen, then press Card Photo Step 2/5 through Step 5/5.\n"
+                "4) At the final size, press V and save the photo.\n"
+                "5) Click Restore Window Size.\n"
+                "6) When the photo is safely saved, click Finish — Restore Original Game File below."
             )
         else:
             self.capture_help_var.set(
-                "Square photo: 1) Open Helpful Tools and click Set Window for Square Photo. "
-                "2) In the Guild Photo Booth, hide your character with the suitable pose/emote, move the BPSR window to the top of the screen, press V, and save the photo. "
-                "3) Click Restore Window Size. 4) When the photo is safely saved, click Finish — Restore Original Game File below."
+                "Square photo:\n"
+                "1) Open Helpful Tools and click Set Window for Square Photo.\n"
+                "2) In the Guild Photo Booth, hide your character with a suitable pose/emote and move the BPSR window to the top of the screen.\n"
+                "3) Press V and save the photo.\n"
+                "4) Click Restore Window Size.\n"
+                "5) When the photo is safely saved, click Finish — Restore Original Game File below."
             )
 
     def mode_changed(self) -> None:
