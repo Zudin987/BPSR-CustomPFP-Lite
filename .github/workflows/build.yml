@@ -32,13 +32,21 @@ jobs:
           pip install -r requirements.txt
           pip install "pyinstaller>=6.10,<7"
 
+      - name: Prepare Windows icon
+        shell: pwsh
+        run: |
+          python -c "from PIL import Image; im=Image.open('assets/app_icon.png').convert('RGBA'); im.save('assets/app_icon.ico', format='ICO', sizes=[(16,16),(24,24),(32,32),(48,48),(64,64),(128,128),(256,256)])"
+
       - name: Build standalone EXE
         shell: pwsh
         run: |
           pyinstaller --noconfirm --clean --onefile --windowed `
             --name BPSR-CustomPFP-Lite `
+            --icon assets/app_icon.ico `
+            --add-data "assets/app_icon.png;assets" `
             --collect-all UnityPy `
             --collect-all fmod_toolkit `
+            --collect-all archspec `
             --collect-all PIL `
             src/app.py
 
