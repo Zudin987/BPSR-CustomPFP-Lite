@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# Trigger the one-time v0.3.0 finalizer workflow.
 p = Path('src/app.py')
 s = p.read_text(encoding='utf-8')
 
