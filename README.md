@@ -17,20 +17,16 @@ Instead of manually extracting `mXX.pkg`, finding the current `fileNNN.unity3d`,
 - Restore Original button
 - Built-in BPSR window-size helper for the guild photo booth
 
-## Download
+## Installation
 
-Open **Releases → Latest Windows build** and download:
+Prebuilt Windows builds, when published, are attached only to GitHub Releases. This source repository and README intentionally do not contain direct executable or archive download links.
 
-`BPSR-CustomPFP-Lite-Windows.zip`
-
-Extract it, then run `BPSR-CustomPFP-Lite.exe`.
-
-You do **not** need Python, QuickBMS, UABEA, or WindowResizer installed locally for this version.
+Use the latest Windows build from the repository's Releases area, extract it, then run the app. You do **not** need Python, QuickBMS, UABEA, or WindowResizer installed locally for this version.
 
 ## Simple portrait workflow
 
 1. Open BPSR and stand near the Guild photo booth.
-2. Open `BPSR-CustomPFP-Lite.exe`.
+2. Open BPSR Custom PFP Lite.
 3. Click **Auto Find**. If it fails, browse to BPSR's `StreamingAssets\container` folder.
 4. Choose the **current `mXX.pkg`** listed by the custom-PFP Discord/community guide.
 5. Optional: type the current `fileNNN` from Discord. If you leave it blank, the tool searches automatically.
