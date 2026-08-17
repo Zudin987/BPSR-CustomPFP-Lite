@@ -20,7 +20,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 APP_NAME = "BPSR Custom PFP Lite"
-VERSION = "0.3.4"
+VERSION = "0.3.5"
 TARGET_PREFIX = "personalzone_player_bg_"
 TARGET_NAMES = tuple(f"{TARGET_PREFIX}{i}" for i in range(1, 21))
 TARGET_SET = set(TARGET_NAMES)
@@ -819,9 +819,12 @@ class App(tk.Tk):
         ttk.Label(game, textvariable=self.game_status, font=("Segoe UI", 11, "bold")).grid(row=0, column=0, sticky="w", padx=12, pady=(10, 2))
         ttk.Label(game, text="We’ll find BPSR automatically. If needed, choose another install folder yourself.", wraplength=730).grid(row=1, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 8))
         buttons = ttk.Frame(game)
-        buttons.grid(row=2, column=0, sticky="w", padx=8, pady=(0, 10))
+        buttons.grid(row=2, column=0, sticky="w", padx=8, pady=(0, 6))
         ttk.Button(buttons, text="Find Game Automatically", command=self.auto_find_game).pack(side="left", padx=4)
         ttk.Button(buttons, text="Choose Folder Manually", command=self.choose_game_folder).pack(side="left", padx=4)
+        ttk.Label(game, text="Current game folder", font=("Segoe UI", 9, "bold")).grid(row=3, column=0, sticky="w", padx=12, pady=(0, 2))
+        ttk.Label(game, textvariable=self.container_var, wraplength=730).grid(row=4, column=0, sticky="w", padx=12, pady=(0, 4))
+        ttk.Label(game, text="Auto Find checks common installs. If you use a launcher or another drive, choose the folder manually.", wraplength=730).grid(row=5, column=0, sticky="w", padx=12, pady=(0, 10))
 
         picture = ttk.LabelFrame(root, text="2. Pick Your Picture")
         picture.grid(row=3, column=0, sticky="ew", pady=(0, 10))
@@ -844,7 +847,7 @@ class App(tk.Tk):
         prepare = ttk.LabelFrame(root, text="3. Get BPSR Ready Before Applying")
         prepare.grid(row=4, column=0, sticky="ew", pady=(0, 10))
         ttk.Label(prepare, text="• Open BPSR and keep it running.\n• Go to Guild Center → Guild Photo Booth and stay at the booth.\n• If you will use the resize buttons, switch BPSR to Windowed mode first.", justify="left", wraplength=730).pack(anchor="w", padx=12, pady=(10, 6))
-        ttk.Label(prepare, text="Do this before Apply. It avoids changing the picture file while the game is moving between other areas or screens.", font=("Segoe UI", 9, "bold"), wraplength=730).pack(anchor="w", padx=12, pady=(0, 6))
+        ttk.Label(prepare, text="Do this before Apply to reduce the chance of random crashes while the app temporarily changes the game files.", font=("Segoe UI", 9, "bold"), wraplength=730).pack(anchor="w", padx=12, pady=(0, 6))
         ttk.Checkbutton(prepare, text="BPSR is open and I am at the Guild Photo Booth", variable=self.booth_ready_var, command=self.prep_changed).pack(anchor="w", padx=12, pady=(0, 10))
 
         apply_box = ttk.LabelFrame(root, text="4. Apply the Picture")
@@ -1083,21 +1086,24 @@ class App(tk.Tk):
         if mode == "card":
             self.capture_help_var.set(
                 "Card photo:\n"
-                "1) Open Helpful Tools and press Card Photo Step 1/5.\n"
-                "2) In the Guild Photo Booth, open Card Photo and hide your character.\n"
-                "3) Keep the BPSR window at the top of the screen, then press Card Photo Step 2/5 through Step 5/5.\n"
-                "4) At the final size, press V and save the photo.\n"
-                "5) Click Restore Window Size.\n"
-                "6) When the photo is safely saved, click Finish — Restore Original Game File below."
+                "1) Open Helpful Tools below and click Card Photo Step 1/5.\n"
+                "2) Enter the Guild Photo Booth (Take Card Photo). Open Settings and change the background to the image you uploaded. If the custom image does not appear, check the tip below.\n"
+                "3) Select an emote that hides your character. Any lying-down emote works; freeze the emote, then press F to hide the UI.\n"
+                "4) Drag the picture capture window to the top of the screen.\n"
+                "5) Click the Card Photo button under Helpful Tools again, then drag the picture capture window back to the top.\n"
+                "6) Repeat Steps 4 and 5 until the app says ‘Card photo setup: step 5 of 5 ready.’ Then press V and save the photo.\n"
+                "7) Click Restore Window Size, then upload the image you captured.\n"
+                "8) Click Finish — Restore Original Game File."
             )
         else:
             self.capture_help_var.set(
                 "Square photo:\n"
-                "1) Open Helpful Tools and click Set Window for Square Photo.\n"
-                "2) In the Guild Photo Booth, hide your character with a suitable pose/emote and move the BPSR window to the top of the screen.\n"
-                "3) Press V and save the photo.\n"
-                "4) Click Restore Window Size.\n"
-                "5) When the photo is safely saved, click Finish — Restore Original Game File below."
+                "1) Open Helpful Tools below and click Set Window for Square Photo.\n"
+                "2) Enter the Guild Photo Booth (Take Portrait). Open Settings and change the background to the image you uploaded. If the custom image does not appear, check the tip below.\n"
+                "3) Select an emote that hides your character. Any lying-down emote works; freeze the emote, then press F to hide the UI.\n"
+                "4) Drag the picture capture window to the top of the screen, then press V and save the photo.\n"
+                "5) Click Restore Window Size, then upload the image you captured.\n"
+                "6) Click Finish — Restore Original Game File."
             )
 
     def mode_changed(self) -> None:
@@ -1301,9 +1307,9 @@ class App(tk.Tk):
 
     def restore_window_size(self) -> None:
         try:
-            resize_bpsr(1920, 1080)
+            resize_bpsr(1600, 900)
             self.reset_card_steps()
-            self.emit_log("BPSR window restored to 1920×1080. Card photo steps reset to Step 1.")
+            self.emit_log("BPSR window restored to 1600×900. Card photo steps reset to Step 1.")
         except Exception as exc:
             messagebox.showerror(APP_NAME, str(exc))
 
