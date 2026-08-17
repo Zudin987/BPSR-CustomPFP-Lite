@@ -11,6 +11,7 @@ import shutil
 import struct
 import threading
 import time
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
@@ -18,7 +19,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 APP_NAME = "BPSR Custom PFP Lite"
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 TARGET_PREFIX = "personalzone_player_bg_"
 TARGET_NAMES = tuple(f"{TARGET_PREFIX}{i}" for i in range(1, 21))
 TARGET_SET = set(TARGET_NAMES)
@@ -780,7 +781,12 @@ class App(tk.Tk):
         tool_buttons = ttk.Frame(self.tools_frame)
         tool_buttons.pack(fill="x", padx=8, pady=(0, 10))
         ttk.Button(tool_buttons, text="Set Window for Square Photo", command=lambda: self.resize_game(545, 2152)).pack(side="left", padx=4)
-        ttk.Button(tool_buttons, text="Next Card Size", command=self.next_card_size).pack(side="left", padx=4)
+        self.card_button = ttk.Button(
+            tool_buttons,
+            text=f"Card Photo Step 1/{len(CARD_SIZES)}",
+            command=self.next_card_size,
+        )
+        self.card_button.pack(side="left", padx=4)
         ttk.Button(tool_buttons, text="Restore Window Size", command=lambda: self.resize_game(1920, 1080)).pack(side="left", padx=4)
         self.tools_frame.grid_remove()
 
@@ -1158,11 +1164,32 @@ class App(tk.Tk):
             messagebox.showerror(APP_NAME, str(exc))
 
     def next_card_size(self) -> None:
+        step_number = self.card_step + 1
         width, height = CARD_SIZES[self.card_step]
-        self.resize_game(width, height)
-        self.card_step = (self.card_step + 1) % len(CARD_SIZES)
+        try:
+            resize_bpsr(width, height)
+            self.emit_log(f"Card photo setup: step {step_number} of {len(CARD_SIZES)} ready.")
+            self.card_step = (self.card_step + 1) % len(CARD_SIZES)
+            next_step = self.card_step + 1
+            self.card_button.configure(text=f"Card Photo Step {next_step}/{len(CARD_SIZES)}")
+        except Exception as exc:
+            messagebox.showerror(APP_NAME, str(exc))
+
+
+def frozen_self_test() -> int:
+    """Verify native dependencies that the frozen EXE needs before a release is published."""
+    try:
+        import UnityPy  # noqa: F401
+        import fmod_toolkit
+
+        dll = Path(fmod_toolkit.__file__).resolve().parent / "libfmod" / "Windows" / "x64" / "fmod.dll"
+        return 0 if dll.is_file() else 2
+    except Exception:
+        return 3
 
 
 if __name__ == "__main__":
+    if "--self-test" in sys.argv:
+        raise SystemExit(frozen_self_test())
     ensure_dirs()
     App().mainloop()
