@@ -1,0 +1,30 @@
+name: Apply v0.2.1 source update
+
+on:
+  push:
+    branches: [feature/v0.2.1-auto-detect-crop]
+    paths:
+      - tools/upgrade_v021.py
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v0.2.1-auto-detect-crop
+      - name: Apply generated source
+        run: python tools/upgrade_v021.py
+      - name: Validate Python syntax
+        run: python -m py_compile src/app.py
+      - name: Commit generated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app.py README.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Add automatic package detection and image crop UI"
+          git push origin HEAD:feature/v0.2.1-auto-detect-crop
