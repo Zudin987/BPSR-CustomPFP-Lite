@@ -1,168 +1,137 @@
 # BPSR Custom PFP Lite
 
-A beginner-friendly Windows tool for the community custom portrait / namecard method in **Blue Protocol: Star Resonance**.
+A beginner-friendly Windows tool for the community custom portrait/namecard method in **Blue Protocol: Star Resonance**.
 
-## Download
+> **TL;DR:** Choose your BPSR game folder, choose/crop an image, let the app temporarily replace the supported Photo Booth background, capture your portrait/card in-game, then use **Finish — Restore Original Game File**.
 
-Open **Releases** and choose:
+> **Important:** This is an unofficial client-file modification. It keeps backups and restores the original package, but the method is not officially supported and is **not guaranteed ban-safe**.
 
-- `BPSR-CustomPFP-Lite-v1.0.0.exe` — standalone app.
-- `BPSR-CustomPFP-Lite-Windows.zip` — EXE + README + notices.
+## What this app does
 
-No Python, QuickBMS, UABEA, or WindowResizer installation is required.
+- Finds a BPSR installation automatically with manual-folder fallback.
+- Searches supported `personalzone_player_bg_1` through `_20` picture slots.
+- Crops, zooms, and repositions Square/Card images.
+- Reads/rebuilds the required Unity package data.
+- Keeps a persistent clean original plus timestamped backups.
+- Validates a rebuilt package before putting it into the game folder.
+- Provides Square/Card window-size helpers for the capture workflow.
+- Restores the original game file when you finish.
 
-## Quick Start
+No separate Python, QuickBMS, UABEA, or WindowResizer installation is required for the release build.
 
-1. Run the app and allow the Administrator prompt.
-2. Click **Find Game Automatically**. If it picks the wrong install, use **Choose Folder Manually**.
-3. Choose **Square** or **Card**, select your image, then crop/reposition it.
-4. Open BPSR → **Guild Center → Guild Photo Booth**, stay there, tick the readiness checkbox, then click **Apply Picture to BPSR**.
-5. Expand the matching capture guide below, save/upload the photo, then click **Finish — Restore Original Game File**.
+## Quick Start — 1, 2, 3
+
+1. Run the app, allow the Administrator prompt, and use **Find Game Automatically** or **Choose Folder Manually**.
+2. Choose **Square** or **Card**, select/crop your image, open BPSR's **Guild Center → Guild Photo Booth**, tick the readiness box, then choose **Apply Picture to BPSR**.
+3. Capture/save the in-game portrait or card, then click **Finish — Restore Original Game File**.
 
 > **Background not showing?** Go to **Homestead → back to Guild → reopen the Guild Photo Booth**.
 
-> **Important:** This is an unofficial client-file modification. The app keeps backups and restores the original package, but the method is not officially supported or guaranteed ban-safe.
+## Square photo capture
 
 <details>
-<summary><strong>Square photo — full capture steps</strong></summary>
+<summary><strong>Show steps</strong></summary>
 
-1. Open **Helpful Tools** and click **Set Window for Square Photo**.
-2. Enter Photo Booth → **Take Portrait** → **Settings**, then choose the background image you uploaded.
-3. Use an emote that hides your character. A lying-down emote can work. Freeze the emote, then press **F** to hide the UI.
-4. Drag the picture capture window to the top, press **V**, and save the photo.
-5. Click **Restore Window Size**, then upload the image you captured.
-6. Click **Finish — Restore Original Game File**.
+1. Open **Helpful Tools** → **Set Window for Square Photo**.
+2. In Photo Booth choose the background image you uploaded.
+3. Use an emote/pose that hides your character if desired, freeze it, then press **F** to hide the UI.
+4. Position the capture view, press **V**, and save the photo.
+5. Use **Restore Window Size**.
+6. Click **Finish — Restore Original Game File** after the game photo has been saved/uploaded.
 
 </details>
 
+## Card photo capture
+
 <details>
-<summary><strong>Card photo — full capture steps</strong></summary>
+<summary><strong>Show steps</strong></summary>
 
-1. Open **Helpful Tools** and click **Card Photo Step 1/5**.
-2. Enter Photo Booth → **Take Card Photo** → **Settings**, then choose the background image you uploaded.
-3. Use an emote that hides your character. A lying-down emote can work. Freeze the emote, then press **F** to hide the UI.
-4. Drag the picture capture window to the top.
-5. Click the **Card Photo** button under Helpful Tools again, then drag the picture capture window back to the top.
-6. Repeat Steps 4–5 until the app says **Card photo setup: step 5 of 5 ready.** Then press **V** and save the photo.
-7. Click **Restore Window Size**, then upload the image you captured.
-8. Click **Finish — Restore Original Game File**.
+1. Open **Helpful Tools** → **Card Photo Step 1/5**.
+2. In **Take Card Photo → Settings**, choose the custom background.
+3. Use an emote/pose that hides your character if desired and press **F** to hide the UI.
+4. Follow the Card Photo helper repeatedly until it reports **step 5 of 5 ready**.
+5. Press **V** and save the card photo.
+6. Use **Restore Window Size**, then **Finish — Restore Original Game File**.
 
-**Restore Window Size** returns BPSR to `1600×900` and resets Card Photo back to **Step 1/5**.
+**Restore Window Size** returns BPSR to `1600×900` and resets the Card helper to Step 1/5.
 
 </details>
 
-<details>
-<summary><strong>Game folder / Steam / launcher installs</strong></summary>
+## Game folder selection
 
-The app shows the selected **Current game folder** on the main screen.
+Auto-detection is only a convenience. **Choose Folder Manually** always overrides it.
 
-- Auto Find is only a convenience.
-- **Choose Folder Manually** always overrides it.
-- Use manual selection if you have multiple Steam libraries, another drive, or a launcher install.
-- Select the BPSR `StreamingAssets\container` folder containing the `m*.pkg` files.
+Use manual selection when you have multiple Steam libraries, another drive, or a non-default launcher install. Select the BPSR `StreamingAssets\container` folder that contains the `m*.pkg` files.
 
-</details>
+## How automatic picture detection works
 
-<details>
-<summary><strong>What this app combines</strong></summary>
+Normal users do not need to know package/bundle/file numbers.
 
-The original manual workflow usually involves separate steps/tools for package extraction/rebuilding, Unity texture editing, image preparation, BPSR window resizing, and restoring the original game files.
+The app searches for the first usable picture slot from:
 
-This app combines those jobs into one guided flow:
+```text
+personalzone_player_bg_1
+...
+personalzone_player_bg_20
+```
 
-- game-folder detection with manual fallback,
-- automatic search for `personalzone_player_bg_1` through `_20`,
-- crop / zoom / reposition for Square and Card images,
-- Unity asset reading and texture replacement,
-- package rebuild + validation,
-- automatic clean and timestamped backups,
-- Square / Card window resize helpers,
-- one-click restore.
+It remembers the last working package, bundle, and slot. If an update moves them, **Search Again** falls back to a fresh scan.
 
-The manual community method commonly uses **QuickBMS**, **UABEA**, and **WindowResizer**. This project automates the equivalent workflow internally rather than launching or bundling those programs.
+An optional `fileNNN` hint can be entered under **Advanced Options** to speed up a search, but an outdated hint does not replace normal fallback detection.
 
-Internally it uses **UnityPy**, **Pillow**, Windows APIs, and PyInstaller for the standalone release build. See `THIRD_PARTY_NOTICES.md` for dependency notes.
+## Backup and restore safety
 
-</details>
-
-<details>
-<summary><strong>How automatic detection works</strong></summary>
-
-Normal users do not need to know `mXX.pkg`, `fileNNN`, Unity bundle names, or texture names.
-
-The app searches for the first usable slot from `personalzone_player_bg_1` through `personalzone_player_bg_20` and stops as soon as one works.
-
-It remembers the last working package, bundle, and slot. If a game update changes them, it searches again automatically.
-
-If Discord gives you something like `file593`, you can optionally paste it into **Advanced Options → Speed hint**. If the hint is outdated, normal search still takes over.
-
-</details>
-
-<details>
-<summary><strong>Backup and restore</strong></summary>
-
-Before changing the live package, the app keeps:
+Before modifying the live package, the app keeps:
 
 - a persistent clean original,
 - a timestamped backup,
 - a separately rebuilt package that must pass validation before installation.
 
-After the in-game photo is saved, click **Finish — Restore Original Game File**.
+App data/backups are kept under:
 
-Backups and app data are stored under:
+```text
+%LOCALAPPDATA%\BPSR-CustomPFP-Lite
+```
 
-`%LOCALAPPDATA%\BPSR-CustomPFP-Lite`
+Do not manually delete the clean backup while you still use the tool.
 
-</details>
-
-<details>
-<summary><strong>Troubleshooting</strong></summary>
+## Troubleshooting
 
 **Auto Find chose the wrong game**  
 Use **Choose Folder Manually**.
 
 **Apply is disabled**  
-Make sure the game folder is valid, the image has been cropped, and the Guild Photo Booth readiness box is ticked.
+Confirm the game folder is valid, the image is cropped, and the Photo Booth readiness checkbox is enabled.
 
 **Window resize does not work**  
 Keep BPSR open in Windowed mode and allow the Administrator prompt.
 
 **Custom background is missing**  
-Go to **Homestead → Guild → reopen the Guild Photo Booth**.
+Go **Homestead → Guild → reopen Guild Photo Booth**.
 
 **Game updated**  
-The app normally searches again automatically. You can also use **Advanced Options → Search Again**.
+Use **Advanced Options → Search Again** if automatic re-detection has not already run.
 
 **Need to undo the change**  
-Use **Finish — Restore Original Game File** with the correct game folder selected.
+Select the correct game folder and use **Finish — Restore Original Game File**.
 
-</details>
+## Privacy / repository safety
 
-<details>
-<summary><strong>Advanced Options</strong></summary>
+- Selected images and game-package backups are local files; they should not be committed to this repository.
+- Generated EXE/ZIP builds belong in GitHub Actions/Releases, not the source tree.
+- The project does not request BPSR login credentials.
+- Avoid copyrighted/offensive/NSFW custom images you are not permitted to use.
 
-Most users can ignore this section. It includes:
+## Third-party components
 
-- editable game-folder path,
-- manual package priority,
-- optional `fileNNN` speed hint,
-- detected package / bundle / picture slot,
-- **Search Again**,
-- detailed activity log.
+The release uses **UnityPy**, **Pillow**, Windows APIs, PyInstaller, and their runtime dependencies. It does not bundle the standalone QuickBMS, UABEA, or WindowResizer programs.
 
-</details>
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency licensing notes.
 
-<details>
-<summary><strong>Source / release notes</strong></summary>
+### Project source licensing
 
-The repository keeps source and build configuration only. Generated EXE/ZIP files are published through GitHub Releases instead of being committed into the source tree.
+This repository currently does **not** contain a project-wide `LICENSE` file. The licences listed in `THIRD_PARTY_NOTICES.md` apply to their respective third-party components and do not by themselves grant a licence to this project's original source code/assets.
 
-The Windows build runs a frozen-dependency self-test before publishing.
+## Disclaimer
 
-See `CHANGELOG.md` for version history.
-
-</details>
-
-## Reminder
-
-This project is unofficial and is not affiliated with the BPSR developers or publishers. Avoid offensive / NSFW custom images.
+This project is unofficial and is not affiliated with or endorsed by the BPSR developers/publishers. Game updates, integrity checks, or account-policy changes can make this community method stop working or carry risk.
