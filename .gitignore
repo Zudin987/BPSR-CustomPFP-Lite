@@ -5,6 +5,7 @@ __pycache__/
 *.pyd
 .venv/
 venv/
+.pytest_cache/
 
 # PyInstaller / local builds
 build/
@@ -20,6 +21,28 @@ assets/app_icon.ico
 *.7z
 *.rar
 
+# Local BPSR game/package data — never commit
+*.pkg
+*.pak
+*.bundle
+*.assets
+*.resS
+*.backup
+*.bak
+
+# Local images / app data that may contain personal content
+local-images/
+user-images/
+
+# Secrets / credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
 # Editors / OS
 .vscode/
 .idea/
@@ -28,3 +51,4 @@ Thumbs.db
 
 # Local app/test data
 *.log
+*.tmp
