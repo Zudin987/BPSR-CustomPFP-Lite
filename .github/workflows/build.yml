@@ -9,10 +9,18 @@ on:
       - 'requirements.txt'
       - 'THIRD_PARTY_NOTICES.md'
       - '.github/workflows/build.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'assets/**'
+      - 'requirements.txt'
+      - 'THIRD_PARTY_NOTICES.md'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: bpsr-stable-release
@@ -21,6 +29,10 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
+    outputs:
+      app_version: ${{ steps.version.outputs.app_version }}
+      exe_name: ${{ steps.version.outputs.exe_name }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,6 +51,7 @@ jobs:
           pip install "pyinstaller>=6.10,<7"
 
       - name: Resolve application version
+        id: version
         shell: pwsh
         run: |
           $match = Select-String -Path "src/app.py" -Pattern '^VERSION = "([^"]+)"$'
@@ -47,6 +60,8 @@ jobs:
           $exeName = "BPSR-CustomPFP-Lite-v$version"
           "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "EXE_NAME=$exeName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "app_version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "exe_name=$exeName" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           Write-Host "Building $exeName"
 
       - name: Prepare Windows icon
@@ -92,16 +107,40 @@ jobs:
           path: |
             dist/${{ env.EXE_NAME }}.exe
             BPSR-CustomPFP-Lite-Windows.zip
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    env:
+      APP_VERSION: ${{ needs.build.outputs.app_version }}
+      EXE_NAME: ${{ needs.build.outputs.exe_name }}
+
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v4
+
+      - name: Download validated build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: BPSR-CustomPFP-Lite-v${{ needs.build.outputs.app_version }}-Windows
+          path: release-artifact
 
       - name: Publish stable version release
-        if: github.ref == 'refs/heads/main'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = "v$env:APP_VERSION"
-          $exe = "dist\$env:EXE_NAME.exe"
-          $zip = "BPSR-CustomPFP-Lite-Windows.zip"
+          $exeItem = Get-ChildItem release-artifact -Recurse -File -Filter "$env:EXE_NAME.exe" | Select-Object -First 1
+          $zipItem = Get-ChildItem release-artifact -Recurse -File -Filter "BPSR-CustomPFP-Lite-Windows.zip" | Select-Object -First 1
+          if (-not $exeItem) { throw "Validated EXE artifact was not found." }
+          if (-not $zipItem) { throw "Validated ZIP artifact was not found." }
+          $exe = $exeItem.FullName
+          $zip = $zipItem.FullName
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -129,7 +168,6 @@ jobs:
           - Guided Square and Card custom-picture workflow.
           - Automatic game-folder and picture-slot detection with manual fallbacks.
           - Built-in crop/reposition, backup/restore, and BPSR window-resize helpers.
-          - Full in-app and README capture instructions.
           - Frozen dependency self-test before publishing.
 
           This is an unofficial client-file modification. Read the README before use.

@@ -21,8 +21,39 @@ jobs:
           set -euo pipefail
           forbidden="$(git ls-files | grep -Ei '\.(exe|msi|dll|apk|aab|zip|7z|rar|jar|pyc|pyo)$' || true)"
           if [[ -n "$forbidden" ]]; then
-            echo "::error::Generated/binary distribution files must not be committed to the source tree. Publish build outputs as GitHub Release assets instead."
+            echo "::error::Generated distribution files belong in GitHub Releases/Actions rather than source."
             printf '%s\n' "$forbidden"
+            exit 1
+          fi
+
+      - name: Block copied game packages and local backups
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden="$(git ls-files | grep -Ei '\.(pkg|pak|bundle|assets|resS|backup)$' || true)"
+          if [[ -n "$forbidden" ]]; then
+            echo "::error::Do not commit BPSR package/game data or local backups."
+            printf '%s\n' "$forbidden"
+            exit 1
+          fi
+
+      - name: Block credential/private-key files
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden="$(git ls-files | grep -Ei '(^|/)\.env($|\.)|\.(pem|key|p12|pfx)$' || true)"
+          if [[ -n "$forbidden" ]]; then
+            echo "::error::Credential/private-key files must not be committed."
+            printf '%s\n' "$forbidden"
+            exit 1
+          fi
+
+      - name: Block obvious committed secret material
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git grep -nEI -- '-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}' -- . ':!.github/workflows/repo-hygiene.yml' 2>/dev/null; then
+            echo "::error::Possible secret material detected in tracked source."
             exit 1
           fi
 
@@ -33,7 +64,7 @@ jobs:
           for file in README README.md README.markdown README.rst; do
             [[ -f "$file" ]] || continue
             if grep -Ein 'releases/download|https?://[^ )"]+\.(exe|msi|dll|apk|aab|zip|7z|rar|jar)([?#][^ )"]*)?([ )"]|$)' "$file"; then
-              echo "::error file=$file::Do not put direct executable/archive download links in the README. Keep binaries in GitHub Releases."
+              echo "::error file=$file::Keep binary distribution in GitHub Releases rather than direct README links."
               exit 1
             fi
           done
