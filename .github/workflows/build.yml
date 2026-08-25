@@ -5,16 +5,20 @@ on:
     branches: [main]
     paths:
       - 'src/**'
+      - 'tests/**'
       - 'assets/**'
       - 'requirements.txt'
+      - 'CHANGELOG.md'
       - 'THIRD_PARTY_NOTICES.md'
       - '.github/workflows/build.yml'
   pull_request:
     branches: [main]
     paths:
       - 'src/**'
+      - 'tests/**'
       - 'assets/**'
       - 'requirements.txt'
+      - 'CHANGELOG.md'
       - 'THIRD_PARTY_NOTICES.md'
       - '.github/workflows/build.yml'
   workflow_dispatch:
@@ -23,7 +27,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: bpsr-stable-release
+  group: bpsr-stable-release-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -48,15 +52,25 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install "pyinstaller>=6.10,<7"
+          pip install "pyinstaller==6.22.2"
+          pip check
+
+      - name: Compile and run safety tests
+        shell: pwsh
+        run: |
+          python -m compileall -q src tests
+          python -m unittest discover -s tests -v
 
       - name: Resolve application version
         id: version
         shell: pwsh
         run: |
-          $match = Select-String -Path "src/app.py" -Pattern '^VERSION = "([^"]+)"$'
-          if (-not $match) { throw "Could not read VERSION from src/app.py" }
+          $match = Select-String -Path "src/settings.py" -Pattern '^VERSION = "([^"]+)"$'
+          if (-not $match) { throw "Could not read VERSION from src/settings.py" }
           $version = $match.Matches[0].Groups[1].Value
+          if (-not (Select-String -Path "CHANGELOG.md" -Pattern "^## $([regex]::Escape($version))\b")) {
+            throw "CHANGELOG.md does not contain a heading for version $version"
+          }
           $exeName = "BPSR-CustomPFP-Lite-v$version"
           "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "EXE_NAME=$exeName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -91,14 +105,22 @@ jobs:
             throw "Frozen dependency self-test failed with exit code $($process.ExitCode)."
           }
 
-      - name: Package ZIP
+      - name: Package ZIP and checksums
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path release | Out-Null
           Copy-Item "dist\$env:EXE_NAME.exe" release\
           Copy-Item README.md release\
+          Copy-Item CHANGELOG.md release\
           Copy-Item THIRD_PARTY_NOTICES.md release\
           Compress-Archive -Path release\* -DestinationPath BPSR-CustomPFP-Lite-Windows.zip -Force
+
+          $exeHash = (Get-FileHash "dist\$env:EXE_NAME.exe" -Algorithm SHA256).Hash.ToLower()
+          $zipHash = (Get-FileHash "BPSR-CustomPFP-Lite-Windows.zip" -Algorithm SHA256).Hash.ToLower()
+          @(
+            "$exeHash  $env:EXE_NAME.exe",
+            "$zipHash  BPSR-CustomPFP-Lite-Windows.zip"
+          ) | Set-Content -Path SHA256SUMS.txt -Encoding ascii
 
       - name: Upload Actions artifact
         uses: actions/upload-artifact@v4
@@ -107,6 +129,7 @@ jobs:
           path: |
             dist/${{ env.EXE_NAME }}.exe
             BPSR-CustomPFP-Lite-Windows.zip
+            SHA256SUMS.txt
           if-no-files-found: error
 
   release:
@@ -137,10 +160,14 @@ jobs:
           $tag = "v$env:APP_VERSION"
           $exeItem = Get-ChildItem release-artifact -Recurse -File -Filter "$env:EXE_NAME.exe" | Select-Object -First 1
           $zipItem = Get-ChildItem release-artifact -Recurse -File -Filter "BPSR-CustomPFP-Lite-Windows.zip" | Select-Object -First 1
+          $sumItem = Get-ChildItem release-artifact -Recurse -File -Filter "SHA256SUMS.txt" | Select-Object -First 1
           if (-not $exeItem) { throw "Validated EXE artifact was not found." }
           if (-not $zipItem) { throw "Validated ZIP artifact was not found." }
+          if (-not $sumItem) { throw "Validated checksum file was not found." }
+
           $exe = $exeItem.FullName
           $zip = $zipItem.FullName
+          $sums = $sumItem.FullName
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -149,8 +176,7 @@ jobs:
           if ($existing) {
             $remoteSha = ($existing -split "\s+")[0]
             if ($remoteSha -ne $env:GITHUB_SHA) {
-              Write-Host "Version $tag is already released from another commit. Build validation passed, but publishing is skipped. Bump VERSION to publish a new release."
-              exit 0
+              throw "Version $tag is already published from another commit. Bump VERSION before merging source changes."
             }
           } else {
             git tag $tag $env:GITHUB_SHA
@@ -158,25 +184,28 @@ jobs:
           }
 
           $notes = @"
-          BPSR Custom PFP Lite $tag — stable Windows release.
+          BPSR Custom PFP Lite $tag — safety + beginner UI/UX hardening.
+
+          Highlights:
+          - Six baby-step beginner workflow with active-session locking and recovery guidance.
+          - Install-specific transactional backups with safe restore refusal.
+          - Original UnityFS compression preservation and verified atomic package commit.
+          - Original-image recropping, EXIF orientation, DPI-aware exact window helpers.
+          - Faster known m79/file593/bg_3 probe with safe fallback scanning.
+          - Automated safety tests and SHA-256 release checksums.
 
           Release assets:
           - $env:EXE_NAME.exe — standalone Windows application.
-          - BPSR-CustomPFP-Lite-Windows.zip — EXE plus README and third-party notices.
+          - BPSR-CustomPFP-Lite-Windows.zip — EXE plus README, changelog, and notices.
+          - SHA256SUMS.txt — SHA-256 checksums for both downloadable binaries.
 
-          Highlights:
-          - Guided Square and Card custom-picture workflow.
-          - Automatic game-folder and picture-slot detection with manual fallbacks.
-          - Built-in crop/reposition, backup/restore, and BPSR window-resize helpers.
-          - Frozen dependency self-test before publishing.
-
-          This is an unofficial client-file modification. Read the README before use.
+          This is an unofficial client-file modification and is not guaranteed ban-safe.
           "@
 
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag $exe $zip --clobber
+            gh release upload $tag $exe $zip $sums --clobber
             gh release edit $tag --title "BPSR Custom PFP Lite $tag" --notes $notes --latest
           } else {
-            gh release create $tag $exe $zip --title "BPSR Custom PFP Lite $tag" --notes $notes --latest
+            gh release create $tag $exe $zip $sums --title "BPSR Custom PFP Lite $tag" --notes $notes --latest
           }
