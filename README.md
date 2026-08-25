@@ -2,6 +2,8 @@
 
 A beginner-first Windows tool that turns the community custom portrait / card method for **Blue Protocol: Star Resonance** into a guided app.
 
+**Website:** https://zudin987.github.io/projects/custompfp/
+
 > **Important:** This is an unofficial client-file modification. The app makes and verifies backups, but the method is not officially supported and is **not guaranteed ban-safe**.
 
 ## What changed in v1.1
