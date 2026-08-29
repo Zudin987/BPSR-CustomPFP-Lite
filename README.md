@@ -4,7 +4,7 @@ Beginner-friendly Windows tool for making a custom BPSR profile picture or card.
 
 **Website:** https://zudin987.github.io/projects/custompfp/
 
-> **Warning:** this temporarily modifies a BPSR client file. It is unofficial and **not guaranteed ban-safe**.
+Community reports suggest similar custom-profile methods are already common across CN, Global and SEA. It is still an unofficial cosmetic method, so no one can promise zero risk.
 
 ## Use
 
@@ -13,7 +13,7 @@ Beginner-friendly Windows tool for making a custom BPSR profile picture or card.
 3. Choose and crop your picture.
 4. Follow the numbered steps shown in the app.
 5. Save the portrait/card in BPSR.
-6. **Restore the original BPSR file when finished.**
+6. Restore the original BPSR file when finished.
 
 If BPSR updates while the custom file is active, close the game and use the launcher/Steam **Verify or Repair** instead of forcing an old backup.
 
