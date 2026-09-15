@@ -4,6 +4,12 @@ Windows tool for preparing a custom **Blue Protocol: Star Resonance** profile pi
 
 [Download Windows build](https://github.com/Zudin987/BPSR-CustomPFP-Lite/releases/latest) · [Project website](https://zudin987.github.io/projects/custompfp/) · [Report an issue](https://github.com/Zudin987/BPSR-CustomPFP-Lite/issues)
 
+<p align="center">
+  <img src="docs/images/CustomPFP.png" alt="BPSR Custom PFP Lite window showing the guided profile picture workflow" width="900">
+  <br>
+  <em>BPSR Custom PFP Lite</em>
+</p>
+
 ## Before you start
 
 You need Windows, an installed copy of BPSR and the image you want to use. The release EXE does not require a separate Python installation.
